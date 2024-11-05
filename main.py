@@ -5,6 +5,7 @@ import time
 import keyboard
 from vosk import Model, KaldiRecognizer
 import socket
+import threading
 
 is_talking = False
 
@@ -19,11 +20,10 @@ MicOpen = False
 silence_start = None
 t_pressed = False
 
-# Inicializa para saber cuando el avatar esta hablando
+# Inicializa para saber cuando el avatar está hablando
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind(('localhost', 5000))
 server_socket.listen(1)
-
 
 # Callback para capturar audio en tiempo real
 def audio_callback(indata, frames, time, status):
@@ -33,28 +33,32 @@ def audio_callback(indata, frames, time, status):
 
 def isAvatarTalking():
     global is_talking
-    client_socket, addr = server_socket.accept()
-    with client_socket:
-        data = client_socket.recv(1024)
-        if data:
-            is_talking = data.decode('utf-8') == 'True'
-            print(f'El personaje está hablando: {is_talking}')
-        else:
-            is_talking = is_talking # Se mantienee
-    return is_talking
+    while True:
+        client_socket, addr = server_socket.accept()
+        with client_socket:
+            data = client_socket.recv(1024)
+            if data:
+                is_talking = data.decode('utf-8') == 'True'
+                print(f'El personaje está hablando: {is_talking}')
+            else:
+                is_talking = is_talking  # Se mantiene
+
 # Función para escuchar y detectar palabra clave "Valentina"
 def listen_for_keyword():
-    global MicOpen, silence_start, t_pressed
+    global MicOpen, silence_start, t_pressed, is_talking
 
     print("Calibrando para el ruido ambiental... Un momento")
     with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype="int16",
                            channels=1, callback=audio_callback):
-        print("Esperando la palabra 'Valentina'...")
+        print("Esperando la palabra 'Euro'...")
 
         while True:
-            if isAvatarTalking():
-                print(".")
+            if is_talking:
+                # Limpiar la cola de audio para evitar procesamiento de fragmentos antiguos
+                while not audio_queue.empty():
+                    audio_queue.get()
                 continue
+
             data = audio_queue.get()
 
             if recognizer.AcceptWaveform(data):
@@ -91,6 +95,11 @@ def listen_for_keyword():
                         time.sleep(0.1)
                         keyboard.release('alt+q')
                         keyboard.release('t')
+
+# Iniciar el hilo para el servidor
+server_thread = threading.Thread(target=isAvatarTalking)
+server_thread.daemon = True  # Termina al cerrar el programa
+server_thread.start()
 
 # Llamar a la función para comenzar a escuchar
 listen_for_keyword()
