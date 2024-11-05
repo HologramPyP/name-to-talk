@@ -1,7 +1,7 @@
 import sounddevice as sd
 import queue
 import json
-from vosk import Model, KaldiRecognizer
+from vosk_sample import Model, KaldiRecognizer
 
 # Ruta al modelo de idioma en español descargado y descomprimido
 MODEL_PATH = "vosk-model-small-es-0.42"

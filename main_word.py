@@ -43,8 +43,8 @@ def listen_for_keyword():
 
             print("Texto reconocido:", text)
 
-            # Verificar si se dijo "Valentina"
-            if "valentina" in text.lower() and not t_pressed:
+            # Verificar si se dijo el nombre
+            if "euro" in text.lower() and not t_pressed:
                 MicOpen = True
                 silence_start = None  # Restablecer el contador de silencio
                 print("¡Palabra clave detectada! MicOpen:", MicOpen)
