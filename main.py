@@ -19,6 +19,7 @@ audio_queue = queue.Queue()
 MicOpen = False
 silence_start = None
 t_pressed = False
+keyword = "euro"
 
 # Inicializa para saber cuando el avatar está hablando
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -50,7 +51,7 @@ def listen_for_keyword():
     print("Calibrando para el ruido ambiental... Un momento")
     with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype="int16",
                            channels=1, callback=audio_callback):
-        print("Esperando la palabra 'Euro'...")
+        print("Esperando la palabra " + keyword+" ...")
 
         while True:
             if is_talking:
@@ -71,7 +72,7 @@ def listen_for_keyword():
             print("Texto reconocido:", text)
 
             # Verificar si se dijo el nombre
-            if "euro" in text.lower() and not t_pressed:
+            if keyword in text.lower() and not t_pressed:
                 MicOpen = True
                 silence_start = None  # Restablecer el contador de silencio
                 print("¡Palabra clave detectada! MicOpen:", MicOpen)
