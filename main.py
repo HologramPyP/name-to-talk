@@ -16,7 +16,7 @@ MicOpen = False
 silence_start = None
 t_pressed = False
 
-keyword = "carlos"
+keyword = texto = input("Por favor, ingresa la palabra clave: ")
 
 # Callback para capturar audio en tiempo real
 def audio_callback(indata, frames, time, status):
