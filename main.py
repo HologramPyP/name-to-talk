@@ -15,6 +15,7 @@ audio_queue = queue.Queue()
 MicOpen = False
 silence_start = None
 t_pressed = False
+last_keyword_time = time.time()
 
 keyword = texto = input("Por favor, ingresa la palabra clave: ")
 
@@ -26,7 +27,7 @@ def audio_callback(indata, frames, time, status):
 
 # Función para escuchar y detectar palabra clave "Valentina"
 def listen_for_keyword():
-    global MicOpen, silence_start, t_pressed
+    global MicOpen, silence_start, t_pressed, last_keyword_time
 
     print("Calibrando para el ruido ambiental... Un momento")
     with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype="int16",
@@ -49,6 +50,7 @@ def listen_for_keyword():
             if keyword in text.lower() and not t_pressed:
                 MicOpen = True
                 silence_start = None  # Restablecer el contador de silencio
+                last_keyword_time = time.time()  # Actualizar el tiempo de la última detección
                 print("¡Palabra clave detectada! MicOpen:", MicOpen)
                 t_pressed = True  # Actualizar el estado a "presionada"
                 keyboard.press('alt+e')
@@ -70,6 +72,14 @@ def listen_for_keyword():
                         time.sleep(0.1)
                         keyboard.release('alt+q')
                         keyboard.release('t')
+
+            # Verificar si han pasado 60 segundos sin detectar la palabra clave
+            if time.time() - last_keyword_time >= 60:
+                print("30 segundos sin detectar la palabra clave. Presionando alt+1")
+                keyboard.press('alt+l')
+                time.sleep(0.1)
+                keyboard.release('alt+l')
+                last_keyword_time = time.time()  # Reiniciar el contador
 
 # Llamar a la función para comenzar a escuchar
 listen_for_keyword()
