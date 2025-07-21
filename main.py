@@ -15,9 +15,10 @@ audio_queue = queue.Queue()
 MicOpen = False
 silence_start = None
 t_pressed = False
+No_words= True #Indica que el usuario no a iniciado la pregunta#
 last_keyword_time = time.time()
 
-keyword = texto = input("Por favor, ingresa la palabra clave: ")
+keyword  = input("Por favor, ingresa la palabra clave: ")
 
 # Callback para capturar audio en tiempo real
 def audio_callback(indata, frames, time, status):
@@ -27,7 +28,7 @@ def audio_callback(indata, frames, time, status):
 
 # Función para escuchar y detectar palabra clave "Valentina"
 def listen_for_keyword():
-    global MicOpen, silence_start, t_pressed, last_keyword_time
+    global MicOpen, silence_start, t_pressed, last_keyword_time, No_words
 
     print("Calibrando para el ruido ambiental... Un momento")
     with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype="int16",
@@ -56,26 +57,67 @@ def listen_for_keyword():
                 keyboard.press('alt+e')
                 time.sleep(0.1)
                 keyboard.release('alt+e')
-                keyboard.press('t')
+                keyboard.press('t')           
+
 
             # Control de silencio para desactivar MicOpen
-            elif text == "":  # Si no hay texto en el resultado parcial
+            elif text == "" and No_words == False:  # Si no hay texto en el resultado parcial
                 if MicOpen and (silence_start is None):
                     silence_start = time.time()  # Iniciar el contador de silencio
-                elif MicOpen and (time.time() - silence_start >= 2):
+                elif MicOpen and (time.time() - silence_start >= 1):
                     MicOpen = False
                     silence_start = None
                     print("Silencio detectado. MicOpen:", MicOpen)
                     if t_pressed:
-                        t_pressed = False
+                        
                         keyboard.press('alt+q')
                         time.sleep(0.1)
                         keyboard.release('alt+q')
                         keyboard.release('t')
+                        t_pressed = False
+                        No_words = True
+
+
+            if MicOpen and No_words:
+                #print("Microfono abierto y no words")
+                if time.time() -last_keyword_time >= 10:
+                    MicOpen = False
+                    silence_start = None
+                    print("Silencio de arranque detectado. MicOpen:", MicOpen)
+                    if t_pressed:
+                        
+                        keyboard.press('alt+q')
+                        time.sleep(0.1)
+                        keyboard.release('alt+q')
+                        keyboard.release('t')
+                        t_pressed = False
+                        No_words = True
+                
+                # Crear lista con las palabras reconocidas
+                palabras = text.split()
+                # Eliminar las palabras de la lista antes de camilo
+                if keyword in palabras:
+                    index = palabras.index(keyword)
+                    palabras = palabras[index:]
+                else:
+                    pass
+                    #print("La palabra clave no está en la lista.")
+                
+                # Si en la lista esta la palabra clave y hay otras palabras, No_words = False
+                if (keyword in palabras) and len(palabras)>1:
+                    No_words = False
+                
+                # Si no es la palabra clave pero estan otras palabras entonces No_words = False
+                if not (keyword in palabras) and len(palabras)>0:
+                    No_words = False
+
+  
+
+                
 
             # Verificar si han pasado 60 segundos sin detectar la palabra clave
             if time.time() - last_keyword_time >= 60:
-                print("30 segundos sin detectar la palabra clave. Presionando alt+1")
+                print("60 segundos sin detectar la palabra clave. Presionando alt+1")
                 keyboard.press('alt+l')
                 time.sleep(0.1)
                 keyboard.release('alt+l')
